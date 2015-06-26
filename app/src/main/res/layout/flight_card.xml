@@ -6,8 +6,9 @@
     android:padding="16dp">
 
     <LinearLayout
+        android:id="@+id/flight_input_data"
         android:layout_width="match_parent"
-        android:layout_height="match_parent"
+        android:layout_height="wrap_content"
         android:background="@android:color/white"
         android:orientation="vertical"
         android:padding="8dp">
@@ -39,42 +40,55 @@
                 android:text="to" />
         </LinearLayout>
 
-        <LinearLayout
-            android:id="@+id/date_range_box"
-            android:layout_width="match_parent"
+
+        <TextView
+            android:id="@+id/from_date_flight_card"
+            android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:gravity="center_vertical"
-            android:orientation="horizontal"
-            android:paddingBottom="16dp"
-            android:paddingTop="16dp">
+            android:layout_gravity="center"
+            android:layout_marginRight="16dp"
+            android:layout_marginTop="16dp"
+            android:drawableLeft="@drawable/ic_calendar"
+            android:gravity="center"
+            android:text="From date" />
 
-
-            <TextView
-                android:id="@+id/from_date"
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_marginRight="16dp"
-                android:layout_weight="1"
-                android:drawableLeft="@drawable/ic_calendar"
-                android:gravity="center_vertical"
-                android:text="From date" />
-
-            <TextView
-                android:id="@+id/to_date"
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_marginRight="16dp"
-                android:layout_weight="1"
-                android:drawableLeft="@drawable/ic_calendar"
-                android:gravity="center_vertical"
-                android:text="To date" />
-        </LinearLayout>
 
         <Button
+            android:id="@+id/search"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_gravity="center_horizontal"
             android:layout_margin="16dp"
             android:text="search" />
     </LinearLayout>
+
+    <LinearLayout
+        android:id="@+id/flight_result_data"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:background="@android:color/white"
+        android:visibility="gone">
+
+        <Button
+            android:id="@+id/edit_flight_details"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Edit flight details" />
+
+        <ProgressBar
+            android:id="@+id/polling_progress"
+            style="@android:style/Widget.ProgressBar.Small"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="end"
+            android:padding="16dp" />
+
+        <com.hcs.shivansh.ixigommxdemoapp.NoScrollListView
+            android:id="@+id/flight_result_listView"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content" />
+
+    </LinearLayout>
+
 </LinearLayout>

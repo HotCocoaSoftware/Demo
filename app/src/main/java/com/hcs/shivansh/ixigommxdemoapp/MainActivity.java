@@ -16,32 +16,68 @@
 
 package com.hcs.shivansh.ixigommxdemoapp;
 
+import android.content.BroadcastReceiver;
+import android.content.Context;
+import android.content.Intent;
+import android.content.IntentFilter;
+import android.location.Location;
 import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
 import android.widget.ArrayAdapter;
 import android.widget.ListView;
 
+import com.android.volley.Request;
+import com.android.volley.Response;
+import com.android.volley.VolleyError;
 import com.hcs.shivansh.ixigommxdemoapp.model.Card;
 import com.hcs.shivansh.ixigommxdemoapp.model.FlightCard;
 import com.hcs.shivansh.ixigommxdemoapp.model.HotelCard;
+import com.hcs.shivansh.ixigommxdemoapp.model.api.FlightCityResponse;
 
 import java.util.ArrayList;
 import java.util.List;
 
 public class MainActivity extends AppCompatActivity implements LocationSearch.LocationSearchCallBacks {
+    private static final String TAG = MainActivity.class.getCanonicalName();
     ArrayAdapter<Card> cardListAdapter;
     int selectedPositioninListForLocationSearch;
     int forOrToFlightLocationSelected; // 1 for from and 2 for to
     private List<Card> listOfCards;
+    private Response.ErrorListener errorListener = new Response.ErrorListener() {
+        @Override
+        public void onErrorResponse(VolleyError volleyError) {
+            volleyError.printStackTrace();
+        }
+    };
+    private Response.Listener<FlightCityResponse> nearByLocationResponseListener = new Response.Listener<FlightCityResponse>() {
+        @Override
+        public void onResponse(FlightCityResponse flightCityResponse) {
+            getFLightCard().setFromCityportKey(flightCityResponse.getFlightCityList().get(0).getFlightCityKey());
+            cardListAdapter.notifyDataSetChanged();
+        }
+    };
+    private BroadcastReceiver locationFetchedReciever;
+
+    private FlightCard getFLightCard() {
+        return (FlightCard) listOfCards.get(0);
+    }
 
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-
+         locationFetchedReciever = new BroadcastReceiver() {
+            @Override
+            public void onReceive(Context context, Intent intent) {
+                makeNearByLocationRequest();
+            }
+        };
+        IntentFilter filter = new IntentFilter();
+        filter.addAction("Location");
+        registerReceiver(locationFetchedReciever, filter);
         listOfCards = getListOfCards();
         cardListAdapter = new CardListAdapter(this, R.layout.hotel_booking_card, listOfCards);
-        getListView().setAdapter(cardListAdapter);
         ListView listView = getListView();
+        listView.setAdapter(cardListAdapter);
         // Create a ListView-specific touch listener. ListViews are given special treatment because
         // by default they handle touches for their list items... i.e. they're in charge of drawing
         // the pressed state (the list selector), handling list item clicks, etc.
@@ -66,6 +102,15 @@ public class MainActivity extends AppCompatActivity implements LocationSearch.Lo
         // Setting this scroll listener is required to ensure that during ListView scrolling,
         // we don't look for swipes.
         listView.setOnScrollListener(touchListener.makeScrollListener());
+    }
+
+    private void makeNearByLocationRequest() {
+        unregisterReceiver(locationFetchedReciever);
+        Location location = IxigoDemoApp.getInsatnce().getmCurrentLocation();
+        GsonRequest request = new GsonRequest<FlightCityResponse>(Request.Method.GET, "http://www.ixigo.com/api/flights/locations/nearby?apiKey=wguels!2$&lat=" + location.getLatitude() + "&long=" + location.getLongitude() + "&locale=IN", FlightCityResponse.class, null, nearByLocationResponseListener, errorListener, null);
+        request.setTag(TAG);
+        IxigoDemoApp.getInsatnce().getRequestQueue().cancelAll(TAG);
+        IxigoDemoApp.getInsatnce().getRequestQueue().add(request);
     }
 
     private List<Card> getListOfCards() {

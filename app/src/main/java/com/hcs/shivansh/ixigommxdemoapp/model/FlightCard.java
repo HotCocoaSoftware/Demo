@@ -1,30 +1,30 @@
 package com.hcs.shivansh.ixigommxdemoapp.model;
 
-import java.util.Calendar;
+import java.util.List;
 
 /**
  * Created by shivansh on 23/06/15.
  */
 public class FlightCard implements Card {
-    private Calendar checkInDate;
-    private Calendar checkOutDate;
+    private String formDate;
     private String fromCityportKey = "From";
     private String toCityportKey = "To";
+    private List<FlightResults> flightResultsList;
 
-    public Calendar getCheckInDate() {
-        return checkInDate;
+    public String getFormDate() {
+        return formDate;
     }
 
-    public void setCheckInDate(Calendar checkInDate) {
-        this.checkInDate = checkInDate;
+    public void setFormDate(String formDate) {
+        this.formDate = formDate;
     }
 
-    public Calendar getCheckOutDate() {
-        return checkOutDate;
+    public List<FlightResults> getFlightResultsList() {
+        return flightResultsList;
     }
 
-    public void setCheckOutDate(Calendar checkOutDate) {
-        this.checkOutDate = checkOutDate;
+    public void setFlightResultsList(List<FlightResults> flightResultsList) {
+        this.flightResultsList = flightResultsList;
     }
 
     public String getFromCityportKey() {

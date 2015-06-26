@@ -7,39 +7,27 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ArrayAdapter;
+import android.widget.ListView;
 import android.widget.TextView;
 
 import com.fourmob.datetimepicker.date.DatePickerDialog;
 import com.hcs.shivansh.ixigommxdemoapp.model.Card;
 import com.hcs.shivansh.ixigommxdemoapp.model.FlightCard;
+import com.hcs.shivansh.ixigommxdemoapp.model.FlightFareDetailsUi;
 
 import java.util.Calendar;
 import java.util.List;
 
+import butterknife.ButterKnife;
+import butterknife.InjectView;
+
 /**
  * Created by shivansh on 22/06/15.
  */
-public class CardListAdapter extends ArrayAdapter<Card> {
+public class CardListAdapter extends ArrayAdapter<Card> implements FlightResultProvider.FlightResult {
     private static final String TAG = CardListAdapter.class.getCanonicalName();
     private Calendar selectedTime = Calendar.getInstance();
     private Calendar maxDate = Calendar.getInstance();
-    private View.OnClickListener mSelectDateClickListener = new View.OnClickListener() {
-        @Override
-        public void onClick(final View v) {
-            final DatePickerDialog datePickerDialog = DatePickerDialog.newInstance(new DatePickerDialog.OnDateSetListener() {
-                                                                                       @Override
-                                                                                       public void onDateSet(DatePickerDialog datePickerDialog, int year, int month, int day) {
-                                                                                           Calendar selectedDate = Calendar.getInstance();
-                                                                                           selectedDate.set(year, month, day);
-                                                                                           ((TextView) v).setText(IxigoDemoApp.getInsatnce().getSimpleDateFormat().format(selectedDate.getTime()));
-                                                                                       }
-                                                                                   }, selectedTime.get(Calendar.YEAR), selectedTime.get(Calendar.MONTH),
-                    selectedTime.get(Calendar.DAY_OF_MONTH), false);
-
-            datePickerDialog.setMinMaxDate(selectedTime.getTime(), maxDate.getTime());
-            datePickerDialog.show(((AppCompatActivity) getContext()).getSupportFragmentManager(), TAG);
-        }
-    };
 
     public CardListAdapter(Context context, int resource, List<Card> objects) {
         super(context, resource, objects);
@@ -52,18 +40,55 @@ public class CardListAdapter extends ArrayAdapter<Card> {
         if (getItem(position) instanceof FlightCard) {
             FlightCard flightCard = (FlightCard) getItem(position);
             convertView = layoutInflater.inflate(R.layout.flight_card, null);
-            TextView fromFlight = (TextView) convertView.findViewById(R.id.from);
-            TextView toFlight = (TextView) convertView.findViewById(R.id.to);
-            fromFlight.setText(flightCard.getFromCityportKey());
-            toFlight.setText(flightCard.getToCityportKey());
-            fromFlight.setOnClickListener(getViewClickListener(position, LocationSearch.SearchType.FLIGHT));
-            toFlight.setOnClickListener(getViewClickListener(position, LocationSearch.SearchType.FLIGHT));
+            final FlightCardViewHolder flightCardViewHolder = new FlightCardViewHolder(convertView);
+            flightCardViewHolder.originTextView.setText(flightCard.getFromCityportKey());
+            flightCardViewHolder.destinationTextView.setText(flightCard.getToCityportKey());
+            flightCardViewHolder.originTextView.setOnClickListener(getViewClickListener(position, LocationSearch.SearchType.FLIGHT));
+            flightCardViewHolder.destinationTextView.setOnClickListener(getViewClickListener(position, LocationSearch.SearchType.FLIGHT));
+            flightCardViewHolder.dateTextView.setOnClickListener(getSelectDateListener(position));
+            flightCardViewHolder.searchButton.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    new FlightResultProvider(CardListAdapter.this, (FlightCard) getItem(position), flightCardViewHolder).startFetchingFlightResults();
+                    flightCardViewHolder.flightInputData.setVisibility(View.GONE);
+                    flightCardViewHolder.flightReesultData.setVisibility(View.VISIBLE);
+                }
+            });
+            flightCardViewHolder.editFLightDetails.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    flightCardViewHolder.flightInputData.setVisibility(View.VISIBLE);
+                    flightCardViewHolder.flightReesultData.setVisibility(View.GONE);
+                }
+            });
         } else {
             convertView = layoutInflater.inflate(R.layout.hotel_booking_card, null);
         }
-        convertView.findViewById(R.id.from_date).setOnClickListener(mSelectDateClickListener);
-        convertView.findViewById(R.id.to_date).setOnClickListener(mSelectDateClickListener);
         return convertView;
+    }
+
+    private View.OnClickListener getSelectDateListener(final int position) {
+        return new View.OnClickListener() {
+            @Override
+            public void onClick(final View v) {
+                final DatePickerDialog datePickerDialog = DatePickerDialog.newInstance(new DatePickerDialog.OnDateSetListener() {
+                                                                                           @Override
+                                                                                           public void onDateSet(DatePickerDialog datePickerDialog, int year, int month, int day) {
+                                                                                               Calendar selectedDate = Calendar.getInstance();
+                                                                                               selectedDate.set(year, month, day);
+                                                                                               TextView textView = (TextView) v;
+                                                                                               textView.setText(IxigoDemoApp.getInsatnce().getSimpleDateFormat().format(selectedDate.getTime()));
+                                                                                               if (textView.getId() == R.id.from_date_flight_card) {
+                                                                                                   ((FlightCard) getItem(position)).setFormDate(textView.getText().toString());
+                                                                                               }
+                                                                                           }
+                                                                                       }, selectedTime.get(Calendar.YEAR), selectedTime.get(Calendar.MONTH),
+                        selectedTime.get(Calendar.DAY_OF_MONTH), false);
+
+                datePickerDialog.setMinMaxDate(selectedTime.getTime(), maxDate.getTime());
+                datePickerDialog.show(((AppCompatActivity) getContext()).getSupportFragmentManager(), TAG);
+            }
+        };
     }
 
     private View.OnClickListener getViewClickListener(final int position, final LocationSearch.SearchType searchType) {
@@ -89,6 +114,39 @@ public class CardListAdapter extends ArrayAdapter<Card> {
         FragmentTransaction fragmentTransaction = ((MainActivity) getContext()).getSupportFragmentManager().beginTransaction();
         fragmentTransaction.setCustomAnimations(android.R.anim.slide_in_left, android.R.anim.slide_out_right);
         fragmentTransaction.replace(R.id.fragment_container, LocationSearch.newInstance(searchType)).addToBackStack(TAG).commit();
+    }
+
+    @Override
+    public void onResult(List<FlightFareDetailsUi> flightFareDetailsUiList, FlightCardViewHolder flightCardViewHolder) {
+        flightCardViewHolder.flightResultListView.setAdapter(new FlightResultsListAdapter(getContext(),R.layout.flight_result_list_item,flightFareDetailsUiList));
+    }
+
+
+    public class FlightCardViewHolder {
+        @InjectView(R.id.flight_input_data)
+        View flightInputData;
+        @InjectView(R.id.from)
+        TextView originTextView;
+        @InjectView(R.id.to)
+        TextView destinationTextView;
+        @InjectView(R.id.from_date_flight_card)
+        TextView dateTextView;
+        @InjectView(R.id.search)
+        TextView searchButton;
+
+        @InjectView(R.id.flight_result_data)
+        View flightReesultData;
+        @InjectView(R.id.edit_flight_details)
+        View editFLightDetails;
+        @InjectView(R.id.polling_progress)
+        View pollingProgressBar;
+        @InjectView(R.id.flight_result_listView)
+        ListView flightResultListView;
+
+        public FlightCardViewHolder(View convertView) {
+            ButterKnife.inject(this, convertView);
+        }
+
     }
 
 }
