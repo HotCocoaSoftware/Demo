@@ -2,6 +2,7 @@ package com.hcs.shivansh.ixigommxdemoapp;
 
 import android.text.TextUtils;
 import android.util.Log;
+import android.view.View;
 
 import com.android.volley.Request;
 import com.android.volley.Response;
@@ -33,6 +34,7 @@ public class FlightResultProvider {
         @Override
         public void onErrorResponse(VolleyError volleyError) {
             volleyError.printStackTrace();
+            flightCardViewHolder.pollingProgressBar.setVisibility(View.GONE);
         }
     };
     private List<Integer> searchProviders;
@@ -66,6 +68,8 @@ public class FlightResultProvider {
                 List<FlightFareDetailsUi> FlightFareDetailsUi = new ArrayList(flghtFareUiListSet);
                 Collections.sort(FlightFareDetailsUi, mFareAscendingComparator);
                 flightResult.onResult(FlightFareDetailsUi, flightCardViewHolder);
+            } else {
+                flightCardViewHolder.pollingProgressBar.setVisibility(View.GONE);
             }
         }
     };
@@ -114,7 +118,7 @@ public class FlightResultProvider {
     }
 
     private void makeRequestToGetFlightResults(String searchProviders, String searchProviderKey) {
-        Log.v("Polling   :","http://www.ixigo.com/api/flights/search/poll/" + searchProviderKey + "?searchProviderIds=" + searchProviders + "&ixi_src=iximaad&apiKey=wguels!2$&locale=IN&ixi_src=iximaad");
+        Log.v("Polling   :", "http://www.ixigo.com/api/flights/search/poll/" + searchProviderKey + "?searchProviderIds=" + searchProviders + "&ixi_src=iximaad&apiKey=wguels!2$&locale=IN&ixi_src=iximaad");
         GsonRequest request = new GsonRequest<>(Request.Method.GET, "http://www.ixigo.com/api/flights/search/poll/" + searchProviderKey + "?searchProviderIds=" + searchProviders + "&ixi_src=iximaad&apiKey=wguels!2$&locale=IN&ixi_src=iximaad", FlightDetailsResponse.class, null, flightPollingResponseListener, errorListener, null);
         request.setTag(TAG);
         IxigoDemoApp.getInsatnce().getRequestQueue().add(request);
@@ -123,6 +127,5 @@ public class FlightResultProvider {
 
     public interface FlightResult {
         void onResult(List<FlightFareDetailsUi> flightFareDetailsUiList, CardListAdapter.FlightCardViewHolder flightCardViewHolder);
-
     }
 }
